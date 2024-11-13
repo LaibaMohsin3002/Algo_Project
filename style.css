@@ -1,0 +1,93 @@
+/* body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#controls {
+    margin-bottom: 20px;
+} */
+
+/* svg {
+    border: 1px solid black;
+    margin-top: 10px;
+} */
+
+/* svg {
+    padding: 10px;
+    margin: auto;
+    display: block;  
+    overflow: visible;
+}
+
+
+.circle {
+    fill: steelblue;
+}
+
+.line {
+    stroke: red;
+    stroke-width: 2px;
+}
+
+.text-label {
+    font-size: 14px;
+    fill: black;
+} */
+
+
+/* body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#controls {
+    margin-bottom: 20px;
+}
+
+svg {
+    padding: 20px; 
+    margin: auto;
+    display: block; 
+    overflow: visible; 
+    border: 1px solid #ccc; 
+}
+
+.text-label {
+    font-size: 14px;
+    fill: black;
+} */
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+#controls {
+    margin-bottom: 20px;
+}
+
+svg {
+    padding: 20px; /* Padding for visual spacing */
+    margin: auto;
+    display: block; /* Centers the SVG */
+    overflow: visible;
+    border: 1px solid #ccc; /* Optional border for debugging */
+}
+
+.node text {
+    font-size: 14px;
+    fill: black;
+    text-anchor: middle;
+}
+
+.node circle {
+    fill: lightblue;
+    stroke: #3182bd;
+    stroke-width: 2px;
+}
+
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 2px;
+}
