@@ -8,6 +8,8 @@ const duration = 1500;
 export default function Home() {
   const [points, setPoints] = useState([]);
   const svgRef = useRef(null);
+  const cancelRef = useRef(false); 
+  const [fileName, setFileName] = useState(''); 
   
   const svgWidth = 800;
   const svgHeight = 600;
@@ -15,9 +17,12 @@ export default function Home() {
 
   let xScale;
   let yScale;
+  const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
+    setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target.result;
@@ -33,23 +38,22 @@ export default function Home() {
     };
     reader.readAsText(file);
   };
-  
-  useEffect(() => {
-    const svg = d3.select(svgRef.current);
-    svg.append('g').attr('id', 'axes'); // For drawing axes
-  }, []);
 
 
-  const clearButtonClicked = () => {
+
+  const clearButton = () => {
     setPoints([]);
+    cancelRef.current = true;
     d3.select(svgRef.current).selectAll("*").remove();
   };
+
+  
   
 
   const drawCoordinates = (points) => {
     const svg = d3.select(svgRef.current);
-    svg.selectAll('.point').remove();
-    svg.selectAll('#axes').selectAll("*").remove(); // Clear previous axes
+
+    svg.append('g').attr('id', 'axes');
 
     // Get min and max values for x and y
     const xExtent = d3.extent(points, d => d.x);
@@ -108,18 +112,22 @@ export default function Home() {
     d3.select('#tooltip').transition().duration(200).style('opacity', 0);
   };
 
-  const runButtonClicked = () => {
-    d3.select(svgRef.current).selectAll('.pair-line').remove();
-    d3.select(svgRef.current).selectAll('.division-line').remove();
+  const runButton = async () => {
+    cancelRef.current = false; // Reset cancel flag
+    d3.select(svgRef.current).selectAll('.distance-line').remove();
+    d3.select(svgRef.current).selectAll('.midpoint-line').remove();
     const pointsX = points.slice().sort((a, b) => a.x - b.x);
     const pointsY = points.slice().sort((a, b) => a.y - b.y);
-    closestPairRec(pointsX, pointsY, null, null);
+    try {
+      await closestPairRec(pointsX, pointsY, null, null);
+    } catch (error) {
+    }
   };
 
 
   const distance = (p1, p2) => Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
 
-  const drawBoundary = (x) => {
+  const drawMidpoint = (x) => {
     const xExtent = d3.extent(points, d => d.x);
     const yExtent = d3.extent(points, d => d.y);
         // Define scales
@@ -140,7 +148,7 @@ export default function Home() {
       .attr('y1', 0)
       .attr('x2', xScaled)
       .attr('y2', svgHeight)
-      .attr('class', 'division-line')
+      .attr('class', 'midpoint-line')
       .attr('stroke', 'gray');
   };
 
@@ -176,7 +184,7 @@ export default function Home() {
       .attr('y1', y1)
       .attr('x2', x2)
       .attr('y2', y2)
-      .attr('class', 'pair-line')
+      .attr('class', 'distance-line')
       .attr('stroke-width', 2);
 
     // Calculate midpoint for the distance label
@@ -236,13 +244,23 @@ export default function Home() {
   };
 
   const closestPairRec = async (pointsX, pointsY, leftBoundary, rightBoundary) => {
+    if (cancelRef.current) return [null, null];
     const subproblem = highlightSubproblem(leftBoundary, rightBoundary, 'subproblem');
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    await delay(duration);
+
+    if (cancelRef.current) {
+      subproblem.remove();
+      return [null, null];
+    }
 
     if (pointsX.length <= 3) {
       const closestPair = bruteForce(pointsX);
       const pair = findDistance(closestPair);
-      await new Promise((resolve) => setTimeout(resolve, duration));
+      await delay(duration);
+      if (cancelRef.current) {
+        subproblem.remove();
+        return [null, null];
+      }
       subproblem.remove();
       return [closestPair, pair];
     }
@@ -250,13 +268,19 @@ export default function Home() {
     const midIdx = Math.floor(pointsX.length / 2);
     const midPoint = pointsX[midIdx];
     const midPointX = pointsX[midIdx].x;
-    const boundary = drawBoundary(midPointX);
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    const boundary = drawMidpoint(midPointX);
+    await delay(duration);
+    if (cancelRef.current) {
+      subproblem.remove();
+      boundary.remove();
+      return [null, null];
+    }
 
     subproblem.remove();
 
     const leftSubproblemRightBoundary = midPointX;
     const leftSubproblemLeftBoundary = leftBoundary !== null ? leftBoundary : pointsX[0].x;
+
     const [pairLeft, leftLine] = await closestPairRec(
       pointsX.slice(0, midIdx),
       pointsY.filter((p) => p.x < midPointX),
@@ -266,6 +290,13 @@ export default function Home() {
 
     const rightSubproblemLeftBoundary = midPointX;
     const rightSubproblemRightBoundary = rightBoundary !== null ? rightBoundary : pointsX[pointsX.length - 1].x;
+
+    if (cancelRef.current) {
+      subproblem.remove();
+      boundary.remove();
+      return [null, null];
+    }
+
     const [pairRight, rightLine] = await closestPairRec(
       pointsX.slice(midIdx),
       pointsY.filter((p) => p.x >= midPointX),
@@ -276,7 +307,7 @@ export default function Home() {
     const leftBlock = highlightSubproblem(leftSubproblemLeftBoundary, leftSubproblemRightBoundary, 'left-right');
     const rightBlock = highlightSubproblem(rightSubproblemLeftBoundary, rightSubproblemRightBoundary, 'left-right');
 
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    
 
     let closestPair = pairLeft;
     let bestLine = leftLine;
@@ -291,14 +322,14 @@ export default function Home() {
     }
 
     notBestLine.remove();
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    await delay(duration);
 
     const stripLeft = midPoint.x - minDist;
     const stripRight = midPoint.x + minDist;
 
     const stripBlock = highlightSubproblem(stripLeft, stripRight, 'strip');
 
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    await delay(duration);
 
     let changed = false;
     const strip = pointsY.filter((p) => Math.abs(p.x - midPoint.x) < minDist).sort((a, b) => a.y - b.y);;
@@ -316,29 +347,31 @@ export default function Home() {
       leftLine.remove();
       rightLine.remove();
       bestLine = findDistance(closestPair);
-      await new Promise((resolve) => setTimeout(resolve, duration));
+      await delay(duration);
     }
 
     leftBlock.remove();
     rightBlock.remove();
     boundary.remove();
     stripBlock.remove();
-    await new Promise((resolve) => setTimeout(resolve, duration));
+    await delay(duration);
     return [closestPair, bestLine];
   };
 
   return (
     <div id="container">
-        <h1 style={{color: 'white'}}>Closest Pair of Points (Divide and Conquer)</h1>
+        <h1>Closest Pair of Points (Divide and Conquer)</h1>
         <div id="buttons">
           <div className="file-upload-container">
-        <label htmlFor="file-upload" className="custom-file-upload">
-          Choose File
-        </label>
-        <input id="file-upload" type="file" />
-        </div>
-        <button onClick={clearButtonClicked}>Clear</button>
-        <button onClick={runButtonClicked}>Run</button>
+          <label htmlFor="file-upload" className="custom-file-upload">
+            Choose File
+          </label>
+          <input id="file-upload" type="file" onChange={handleFileUpload}/>
+          {fileName && <p className="file-name">Selected File: {fileName}</p>}
+          </div>
+        
+        <button onClick={clearButton}>Clear</button>
+        <button onClick={runButton}>Start</button>
       </div>
       <div id="tooltip" style={{ position: 'absolute', background: 'lightgray', padding: '5px', opacity: 0 }}></div>
       <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
