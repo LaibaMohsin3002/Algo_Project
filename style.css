@@ -1,93 +1,71 @@
-/* body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-}
-
-#controls {
-    margin-bottom: 20px;
-} */
-
-/* svg {
-    border: 1px solid black;
-    margin-top: 10px;
-} */
-
-/* svg {
-    padding: 10px;
-    margin: auto;
-    display: block;  
-    overflow: visible;
-}
-
-
-.circle {
-    fill: steelblue;
-}
-
-.line {
-    stroke: red;
-    stroke-width: 2px;
-}
-
-.text-label {
-    font-size: 14px;
-    fill: black;
-} */
-
-
-/* body {
-    font-family: Arial, sans-serif;
-    text-align: center;
-}
-
-#controls {
-    margin-bottom: 20px;
-}
-
-svg {
-    padding: 20px; 
-    margin: auto;
-    display: block; 
-    overflow: visible; 
-    border: 1px solid #ccc; 
-}
-
-.text-label {
-    font-size: 14px;
-    fill: black;
-} */
-
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Arial', sans-serif;
+    background-color: #121212;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+
+h1 {
     text-align: center;
+    font-size: 36px;
+    color: #FFD700;
+    margin-top: 20px;
 }
 
-#controls {
-    margin-bottom: 20px;
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px;
 }
 
-svg {
-    padding: 20px; /* Padding for visual spacing */
-    margin: auto;
-    display: block; /* Centers the SVG */
-    overflow: visible;
-    border: 1px solid #ccc; /* Optional border for debugging */
+.input-container {
+    background-color: #1f1f1f;
+    padding: 20px;
+    border-radius: 10px;
+    width: 300px;
 }
 
-.node text {
-    font-size: 14px;
-    fill: black;
-    text-anchor: middle;
+.visualization-container {
+    flex-grow: 1;
+    padding: 20px;
 }
 
-.node circle {
-    fill: lightblue;
-    stroke: #3182bd;
-    stroke-width: 2px;
+canvas {
+    background-color: #333;
+    border: 2px solid #fff;
+    width: 100%;
+    height: 600px;
+    border-radius: 10px;
 }
 
-.link {
-    fill: none;
-    stroke: #ccc;
-    stroke-width: 2px;
+button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+h3 {
+    color: #FFD700;
+}
+
+#calculations-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    color: #ddd;
 }

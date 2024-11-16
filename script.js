@@ -1,166 +1,159 @@
-// let svg = d3.select("svg");
-// const duration = 1000; // Duration for animations
+document.getElementById('start-btn').addEventListener('click', startVisualization);
+document.getElementById('fileInput').addEventListener('change', handleFileUpload);
 
-// document.getElementById('run').addEventListener('click', run);
-// document.getElementById('clear').addEventListener('click', clearVisualization);
+const canvas = document.getElementById('treeCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth * 0.8; // Adjust canvas width
+canvas.height = 10000;
 
-// function run() {
-//     const num1 = document.getElementById('input1').value;
-//     const num2 = document.getElementById('input2').value;
-//     if (!num1 || !num2 || isNaN(num1) || isNaN(num2)) {
-//         alert("Please enter valid numbers.");
-//         return;
-//     }
+let treeData = [];
+let maxLevel = 0;
+let animationStep = 0;
+let animationDelay = 500;
+let calculationsList = document.getElementById('calculations-list');
+let resultContainer = document.getElementById('result');
 
-//     clearVisualization();
-//     performMultiplication(num1, num2);
-// }
-
-// function clearVisualization() {
-//     svg.selectAll("*").remove();
-// }
-
-// function performMultiplication(num1, num2) {
-//     visualizeKaratsuba(num1, num2);
-// }
-
-// async function visualizeKaratsuba(x, y, depth = 0, xOffset = 0, yOffset = 50) {
-//     // Base case: single-digit multiplication
-//     if (x.length === 1 || y.length === 1) {
-//         const product = (parseInt(x) * parseInt(y)).toString();
-//         drawText(`${x} * ${y} = ${product}`, xOffset, yOffset);
-//         await delay(duration);
-//         return product;
-//     }
-
-//     const n = Math.max(x.length, y.length);
-//     const halfN = Math.ceil(n / 2);
-
-//     // Splitting the numbers
-//     const x1 = x.slice(0, -halfN) || '0';
-//     const x0 = x.slice(-halfN);
-//     const y1 = y.slice(0, -halfN) || '0';
-//     const y0 = y.slice(-halfN);
-
-//     drawText(`Dividing ${x} into ${x1} and ${x0}`, 400 + xOffset, yOffset); // Centered around 400
-//     drawText(`Dividing ${y} into ${y1} and ${y0}`, 400 + xOffset, yOffset + 30); // Adjust y-offset for spacing
-//     await delay(duration);
-
-//     // Recursively compute products
-//     const z2 = await visualizeKaratsuba(x1, y1, depth + 1, xOffset + 80, yOffset + 80);
-//     const z0 = await visualizeKaratsuba(x0, y0, depth + 1, xOffset - 80, yOffset + 80);
-//     const z1 = await visualizeKaratsuba(
-//         (BigInt(x1) + BigInt(x0)).toString(),
-//         (BigInt(y1) + BigInt(y0)).toString(),
-//         depth + 1,
-//         xOffset,
-//         yOffset + 160
-//     );
-
-//     const product = BigInt(z2) * BigInt(10 ** (2 * halfN)) +
-//                     (BigInt(z1) - BigInt(z2) - BigInt(z0)) * BigInt(10 ** halfN) +
-//                     BigInt(z0);
-
-//     drawText(`Combining results: ${x1} * ${y1} + (${x1}+${x0})*(${y1}+${y0}) - ${x0}*${y0} = ${product}`, 400 + xOffset, yOffset + 240);
-//     await delay(duration);
-
-//     return product.toString();
-// }
-
-// function drawText(text, x, y) {
-//     svg.append("text")
-//         .attr("x", Math.min(Math.max(x, 20), 780)) // Ensures text is within bounds of 800-width SVG
-//         .attr("y", y)
-//         .attr("text-anchor", "middle") // Centers the text horizontally around the x coordinate
-//         .attr("class", "text-label")
-//         .text(text);
-// }
-
-// function delay(ms) {
-//     return new Promise(resolve => setTimeout(resolve, ms));
-// }
-
-
-let svg = d3.select("svg");
-const duration = 1000; // Duration for animations
-
-document.getElementById('run').addEventListener('click', run);
-document.getElementById('clear').addEventListener('click', clearVisualization);
-
-function run() {
-    const num1 = document.getElementById('input1').value;
-    const num2 = document.getElementById('input2').value;
-    if (!num1 || !num2 || isNaN(num1) || isNaN(num2)) {
-        alert("Please enter valid numbers.");
-        return;
+// Handle file input
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const numbers = content.split('\n').map(line => line.trim());
+            if (numbers.length === 2) {
+                document.getElementById('number1').value = numbers[0];
+                document.getElementById('number2').value = numbers[1];
+            }
+        };
+        reader.readAsText(file);
     }
-
-    clearVisualization();
-    performMultiplication(num1, num2);
 }
 
-function clearVisualization() {
-    svg.selectAll("*").remove();
+// Start visualization with file input
+function startVisualization() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    treeData = [];
+    maxLevel = 0;
+    animationStep = 0;
+    calculationsList.innerHTML = '';
+    resultContainer.textContent = '-';
+
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const content = e.target.result;
+            const numbers = content.split('\n').map(line => line.trim());
+            if (numbers.length === 2) {
+                const num1 = numbers[0];
+                const num2 = numbers[1];
+                const finalResult = animateKaratsuba(num1, num2, canvas.width / 2, 50, 0, canvas.width / 4, null);
+
+                animateLevels(() => {
+                    resultContainer.textContent = finalResult;
+                });
+            }
+        };
+        reader.readAsText(file);
+    }
 }
 
-function performMultiplication(num1, num2) {
-    visualizeKaratsuba(num1, num2, 0, 400, 50); // Start at the center of the SVG with vertical spacing
-}
+// Karatsuba algorithm visualization with improvements
+function animateKaratsuba(x, y, xPos, yPos, level, offset, parent) {
+    maxLevel = Math.max(maxLevel, level);
 
-async function visualizeKaratsuba(x, y, depth, xOffset, yOffset) {
-    // Base case: single-digit multiplication
     if (x.length === 1 || y.length === 1) {
-        const product = (parseInt(x) * parseInt(y)).toString();
-        drawText(`${x} * ${y} = ${product}`, xOffset, yOffset);
-        await delay(duration);
-        return product;
+        const result = parseInt(x) * parseInt(y);
+        treeData.push({ x, y, result, xPos, yPos, level, type: 'leaf', parent });
+        addCalculation(`${x} × ${y} = ${result}`);
+        return result;
     }
 
     const n = Math.max(x.length, y.length);
-    const halfN = Math.ceil(n / 2);
+    const m = Math.floor(n / 2);
 
-    // Splitting the numbers
-    const x1 = x.slice(0, -halfN) || '0';
-    const x0 = x.slice(-halfN);
-    const y1 = y.slice(0, -halfN) || '0';
-    const y0 = y.slice(-halfN);
+    const a = x.slice(0, -m) || "0";
+    const b = x.slice(-m) || "0";
+    const c = y.slice(0, -m) || "0";
+    const d = y.slice(-m) || "0";
 
-    // Visualize the division of x and y
-    drawText(`Dividing ${x} into ${x1} and ${x0}`, xOffset, yOffset);
-    drawText(`Dividing ${y} into ${y1} and ${y0}`, xOffset, yOffset + 30);
-    await delay(duration);
+    treeData.push({ x, y, xPos, yPos, level, type: 'internal', parent });
 
-    // Calculate subproblems recursively and adjust the horizontal offsets for a "tree" structure
-    const z2 = await visualizeKaratsuba(x1, y1, depth + 1, xOffset - 150, yOffset + 80);
-    const z0 = await visualizeKaratsuba(x0, y0, depth + 1, xOffset + 150, yOffset + 80);
-    const z1 = await visualizeKaratsuba(
-        (BigInt(x1) + BigInt(x0)).toString(),
-        (BigInt(y1) + BigInt(y0)).toString(),
-        depth + 1,
-        xOffset,
-        yOffset + 160
-    );
+    // Recursive calls
+    const left = animateKaratsuba(a, c, xPos - offset, yPos + 150, level + 1, offset / 2, { xPos, yPos });
+    const right = animateKaratsuba(b, d, xPos + offset, yPos + 150, level + 1, offset / 2, { xPos, yPos });
+    const middle = animateKaratsuba(addStrings(a, b), addStrings(c, d), xPos, yPos + 300, level + 2, offset / 2, { xPos, yPos });
 
-    const product = BigInt(z2) * BigInt(10 ** (2 * halfN)) +
-                    (BigInt(z1) - BigInt(z2) - BigInt(z0)) * BigInt(10 ** halfN) +
-                    BigInt(z0);
-
-    // Visualize the combination of results
-    drawText(`Combining: ${x1} * ${y1} + (${x1}+${x0})*(${y1}+${y0}) - ${x0}*${y0} = ${product}`, xOffset, yOffset + 240);
-    await delay(duration);
-
-    return product.toString();
+    const result = Math.pow(10, 2 * m) * left + Math.pow(10, m) * (middle - left - right) + right;
+    addCalculation(`Combine: 10^${2 * m} * ${left} + 10^${m} * (${middle} - ${left} - ${right}) + ${right} = ${result}`);
+    return result;
 }
 
-function drawText(text, x, y) {
-    svg.append("text")
-        .attr("x", Math.min(Math.max(x, 20), 780)) // Ensures text is within bounds of 800-width SVG
-        .attr("y", y)
-        .attr("text-anchor", "middle") // Centers the text horizontally around the x coordinate
-        .attr("class", "text-label")
-        .text(text);
+// Animate the levels
+function animateLevels(callback) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    treeData.forEach(node => {
+        if (node.level <= animationStep) {
+            drawNode(node);
+        }
+    });
+
+    if (animationStep <= maxLevel) {
+        animationStep++;
+        requestAnimationFrame(() => animateLevels(callback)); // Smooth animation
+    } else if (callback) {
+        callback();
+    }
 }
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+// Draw a node with more spacing between child nodes
+function drawNode(node) {
+    const { x, y, xPos, yPos, type, parent } = node;
+
+    if (parent) {
+        ctx.beginPath();
+        ctx.moveTo(parent.xPos, parent.yPos);
+        ctx.lineTo(xPos, yPos);
+        ctx.stroke();
+    }
+
+    const radius = 30;
+    ctx.fillStyle = type === 'leaf' ? '#FF6347' : '#4682B4';
+    ctx.beginPath();
+    ctx.arc(xPos, yPos, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${x} × ${y}`, xPos, yPos + 5);
+}
+
+// Add a calculation to the list
+function addCalculation(text) {
+    const li = document.createElement('li');
+    li.textContent = text;
+    calculationsList.appendChild(li);
+}
+
+// Helper to add strings
+function addStrings(a, b) {
+    let maxLength = Math.max(a.length, b.length);
+    a = a.padStart(maxLength, '0');
+    b = b.padStart(maxLength, '0');
+
+    let carry = 0;
+    let result = '';
+    for (let i = maxLength - 1; i >= 0; i--) {
+        const sum = parseInt(a[i]) + parseInt(b[i]) + carry;
+        carry = Math.floor(sum / 10);
+        result = (sum % 10) + result;
+    }
+    if (carry > 0) {
+        result = carry + result;
+    }
+    return result;
 }
