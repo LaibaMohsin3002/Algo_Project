@@ -3,34 +3,47 @@ document.getElementById('fileInput').addEventListener('change', handleFileUpload
 
 const canvas = document.getElementById('treeCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth * 0.8; // Adjust canvas width
-canvas.height = 10000;
+// canvas.width = window.innerWidth * 1.0; // Adjust canvas width
+// canvas.height = 1000;
 
 let treeData = [];
 let maxLevel = 0;
 let animationStep = 0;
-let animationDelay = 500;
+let animationDelay = 1500; // Delay for each level animation
 let calculationsList = document.getElementById('calculations-list');
 let resultContainer = document.getElementById('result');
 
-// Handle file input
 function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
             const content = e.target.result;
-            const numbers = content.split('\n').map(line => line.trim());
-            if (numbers.length === 2) {
-                document.getElementById('number1').value = numbers[0];
-                document.getElementById('number2').value = numbers[1];
+            const lines = content.split('\n').map(line => line.trim());
+
+            // Check if there are at least 2 numbers in the file
+            if (lines.length >= 2) {
+                const number1 = lines[0];  // First number
+                const number2 = lines[1];  // Second number
+
+                // Display the numbers in the read-only section
+                document.getElementById('number1-display').textContent = `Number 1: ${number1}`;
+                document.getElementById('number2-display').textContent = `Number 2: ${number2}`;
+
+                // You can optionally populate the input fields for editing (if needed)
+                document.getElementById('number1').value = number1;
+                document.getElementById('number2').value = number2;
+            } else {
+                alert('The file does not contain two numbers.');
             }
         };
         reader.readAsText(file);
+    } else {
+        alert('No file selected.');
     }
 }
 
-// Start visualization with file input
+
 function startVisualization() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     treeData = [];
@@ -49,7 +62,17 @@ function startVisualization() {
             if (numbers.length === 2) {
                 const num1 = numbers[0];
                 const num2 = numbers[1];
-                const finalResult = animateKaratsuba(num1, num2, canvas.width / 2, 50, 0, canvas.width / 4, null);
+
+                // Dynamically calculate canvas width and height
+                //canvas.width = window.innerWidth * 0.9; 
+                const canvasWidth = Math.max(2500, maxLevel * 5000);  // Set width dynamically
+                canvas.width = canvasWidth;
+                canvas.height = Math.max(1500, maxLevel * 600);  // 300px per level, adjust if needed
+
+                const horizontalOffset = 100; // Adjust this value as needed
+                const finalResult = animateKaratsuba(num1, num2, canvas.width / 2 + horizontalOffset, 50, 0, canvas.width / 4, null);
+
+                //const finalResult = animateKaratsuba(num1, num2, canvas.width / 2, 50, 0, canvas.width / 4, null);
 
                 animateLevels(() => {
                     resultContainer.textContent = finalResult;
@@ -60,7 +83,6 @@ function startVisualization() {
     }
 }
 
-// Karatsuba algorithm visualization with improvements
 function animateKaratsuba(x, y, xPos, yPos, level, offset, parent) {
     maxLevel = Math.max(maxLevel, level);
 
@@ -79,19 +101,55 @@ function animateKaratsuba(x, y, xPos, yPos, level, offset, parent) {
     const c = y.slice(0, -m) || "0";
     const d = y.slice(-m) || "0";
 
-    treeData.push({ x, y, xPos, yPos, level, type: 'internal', parent });
+    const nodeType = level % 2 === 0 ? 'leaf' : 'internal';  // Alternate between node types/colors
+    treeData.push({ x, y, xPos, yPos, level, type: nodeType, parent });
 
-    // Recursive calls
-    const left = animateKaratsuba(a, c, xPos - offset, yPos + 150, level + 1, offset / 2, { xPos, yPos });
-    const right = animateKaratsuba(b, d, xPos + offset, yPos + 150, level + 1, offset / 2, { xPos, yPos });
-    const middle = animateKaratsuba(addStrings(a, b), addStrings(c, d), xPos, yPos + 300, level + 2, offset / 2, { xPos, yPos });
+    // Adjust spacing between child nodes with different angles for different node types
+    const verticalSpacing = 200;
+    const angleModifier = nodeType === 'leaf' ? 1.3 : 0.9;  // Different modifier based on node type
+
+    const left = animateKaratsuba(a, c, xPos - offset * angleModifier, yPos + verticalSpacing, level + 1, offset / 2, { xPos, yPos });
+    const right = animateKaratsuba(b, d, xPos + offset * angleModifier, yPos + verticalSpacing, level + 1, offset / 2, { xPos, yPos });
+    const middle = animateKaratsuba(addStrings(a, b), addStrings(c, d), xPos, yPos + 2 * verticalSpacing, level + 2, offset / 2, { xPos, yPos });
 
     const result = Math.pow(10, 2 * m) * left + Math.pow(10, m) * (middle - left - right) + right;
     addCalculation(`Combine: 10^${2 * m} * ${left} + 10^${m} * (${middle} - ${left} - ${right}) + ${right} = ${result}`);
     return result;
 }
 
-// Animate the levels
+function drawNode(node) {
+    const { x, y, xPos, yPos, type, parent } = node;
+
+    if (parent) {
+        // Draw edges cleaner by connecting to the edge of the node
+        const parentRadius = 40;
+        const childRadius = 40;
+        const parentEdgeX = parent.xPos;
+        const parentEdgeY = parent.yPos;
+
+        const angle = Math.atan2(yPos - parentEdgeY, xPos - parentEdgeX);
+        const distance = Math.sqrt(Math.pow(yPos - parentEdgeY, 2) + Math.pow(xPos - parentEdgeX, 2));
+
+        // Adjust the line to start from the node's edge
+        ctx.beginPath();
+        ctx.moveTo(parentEdgeX + Math.cos(angle) * parentRadius, parentEdgeY + Math.sin(angle) * parentRadius);
+        ctx.lineTo(xPos + Math.cos(angle) * childRadius, yPos + Math.sin(angle) * childRadius);
+        ctx.stroke();
+    }
+
+    const radius = 40;
+    ctx.fillStyle = type === 'leaf' ? '#FF99BE' : '#4E8BC4';
+    ctx.beginPath();
+    ctx.arc(xPos, yPos, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${x} × ${y}`, xPos, yPos + 5);
+}
+
+// Animate the levels with delay
 function animateLevels(callback) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -102,34 +160,13 @@ function animateLevels(callback) {
     });
 
     if (animationStep <= maxLevel) {
-        animationStep++;
-        requestAnimationFrame(() => animateLevels(callback)); // Smooth animation
+        setTimeout(() => {
+            animationStep++;
+            animateLevels(callback);
+        }, animationDelay); // Delay between each level animation
     } else if (callback) {
         callback();
     }
-}
-
-// Draw a node with more spacing between child nodes
-function drawNode(node) {
-    const { x, y, xPos, yPos, type, parent } = node;
-
-    if (parent) {
-        ctx.beginPath();
-        ctx.moveTo(parent.xPos, parent.yPos);
-        ctx.lineTo(xPos, yPos);
-        ctx.stroke();
-    }
-
-    const radius = 30;
-    ctx.fillStyle = type === 'leaf' ? '#FF6347' : '#4682B4';
-    ctx.beginPath();
-    ctx.arc(xPos, yPos, radius, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${x} × ${y}`, xPos, yPos + 5);
 }
 
 // Add a calculation to the list

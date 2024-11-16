@@ -1,5 +1,5 @@
 body {
-    font-family: 'Arial', sans-serif;
+    font-family: 'Georgia', serif;  
     background-color: #121212;
     color: #fff;
     margin: 0;
@@ -8,57 +8,81 @@ body {
 
 h1 {
     text-align: center;
-    font-size: 36px;
-    color: #FFD700;
-    margin-top: 20px;
+    font-size: 50px;
+    color: #fff;
+    margin-top: 30px;
 }
 
 .main-container {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    gap: 20px;
-    padding: 20px;
+    gap: 30px;
+    padding: 30px;
 }
 
 .input-container {
     background-color: #1f1f1f;
-    padding: 20px;
+    padding: 25px;
     border-radius: 10px;
-    width: 300px;
+    width: 350px;
 }
 
-.visualization-container {
-    flex-grow: 1;
-    padding: 20px;
+.input-container label {
+    font-size: 20px;
+    color: #bbb;
+    margin-bottom: 10px;
+    display: block;
 }
 
-canvas {
-    background-color: #333;
-    border: 2px solid #fff;
-    width: 100%;
-    height: 600px;
-    border-radius: 10px;
-}
-
-button {
+.input-container input[type="text"],
+.input-container input[type="file"] {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.input-container button {
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
     border: none;
     border-radius: 5px;
-    font-size: 16px;
-    background-color: #4CAF50;
+    font-size: 18px;
+    background-color: #8a3fff; 
     color: white;
     cursor: pointer;
 }
 
-button:hover {
-    background-color: #45a049;
+.input-container button:hover {
+    background-color: #6a1e9f; 
 }
 
-h3 {
-    color: #FFD700;
+.input-container #number1,
+.input-container #number2 {
+    font-size: 18px;
+    color: #333;
+}
+
+.visualization-container {
+    background-color: #121212;
+    flex-grow: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+#canvas-container {
+    width: 100%;
+    height: 600px;
+    overflow: auto;
+    position: relative;
+}
+
+#calculations-container h3 {
+    color: #8a3fff;
+    font-size: 22px;
 }
 
 #calculations-list {
@@ -67,5 +91,51 @@ h3 {
 }
 
 li {
-    color: #ddd;
+    color: #bbb;
+    font-size: 16px;
+    line-height: 1.8;
+    margin-bottom: 10px;
 }
+
+li + li {
+    margin-top: 10px;
+}
+
+#result-container {
+    color: #bbb;
+    font-size: 20px;
+    margin-top: 20px;
+}
+
+#result-container h3 {
+    color: #8a3fff;
+}
+
+.visualization-container {
+    flex-grow: 1;
+    padding: 20px;
+    position: relative;
+    overflow: auto;  
+    max-height: 100vh;
+    max-width: 100vw;
+}
+
+#canvas-container {
+    position: relative;
+    min-width: 100%;
+    min-height: 100%;
+    overflow: auto;
+    width: 100%; /* Allow the container to expand */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    position: relative;
+}
+
+
+canvas {
+    border: 2px solid #fff;
+    border-radius: 10px;
+    background-color: rgba(223, 224, 229, 0.2);
+    display: block;  /* Ensure it takes full width */
+    min-width: 100%;
+}
+
