@@ -1,5 +1,5 @@
 'use client'
-import './globals.css'
+import styles from './mainpage.module.css'
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -30,35 +30,40 @@ export default function Home() {
   };
 
   return (
-    <Container maxWidth="sm" sx={{ mt: 5 }}>
-      <Box textAlign="center">
-        <Typography variant="h4" gutterBottom>
-          Algorithm Selector
-        </Typography>
-        <FormControl fullWidth sx={{ mb: 2 }}>
-          <InputLabel id="algo-select-label">Choose Algorithm</InputLabel>
-          <Select
-            labelId="algo-select-label"
-            colour = "white"
-            value={selectedAlgo}
-            onChange={handleAlgorithmChange}
-            label="Choose Algorithm"
+    <div className={styles.body}>
+      <Container maxWidth="sm" sx={{ mt: 5 }} className={styles.container}>
+        <Box textAlign="center">
+          <Typography variant="h4" gutterBottom className={styles.heading}>
+            Algorithm Selector
+          </Typography>
+          <FormControl fullWidth sx={{ mb: 2 }} className={styles.formControl}>
+            <InputLabel id="algo-select-label" className={styles.inputLabel}>
+              Choose Algorithm
+            </InputLabel>
+            <Select
+              labelId="algo-select-label"
+              color="white"
+              value={selectedAlgo}
+              onChange={handleAlgorithmChange}
+              label="Choose Algorithm"
+              className={styles.select}
+              IconComponent={() => <div className={styles.selectIcon}></div>}
+            >
+              <MenuItem value="closest-pair" className={styles.menuItem}>Closest Pair Algorithm</MenuItem>
+              <MenuItem value="integer-multiplication" className={styles.menuItem}>Integer Multiplication Algorithm</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!selectedAlgo}
+            onClick={navigateToAlgorithm}
+            className={`${styles.button} ${!selectedAlgo ? styles.buttonDisabled : ''}`}
           >
-            <MenuItem value="closest-pair">Closest Pair Algorithm</MenuItem>
-            <MenuItem value="integer-multiplication">Integer Multiplication Algorithm</MenuItem>
-          </Select>
-        </FormControl>
-        <Button
-          variant="contained"
-          color="primary"
-          disabled={!selectedAlgo}
-          onClick={navigateToAlgorithm}
-        >
-          Go
-        </Button>
-      </Box>
-    </Container>
+            Go
+          </Button>
+        </Box>
+      </Container>
+    </div>
   );
 };
-
-

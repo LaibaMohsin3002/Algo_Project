@@ -1,3 +1,18 @@
+body {
+  font-family: 'Georgia', serif;  
+  background-color: #121212;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  text-align: center;
+  font-size: 50px;
+  color: #fff;
+  margin-top: 30px;
+}
+
 svg {
     display: block;
     margin: auto;
@@ -6,7 +21,7 @@ svg {
     
   }
   
-  .container {
+  ._container {
     padding: 20px;
     margin: auto;
   }
@@ -56,21 +71,6 @@ svg {
   }
 
 
-
-  body {
-    font-family: 'Georgia', serif;  
-    background-color: #121212;
-    color: #fff;
-    margin: 0;
-    padding: 0;
-}
-
-h1 {
-    text-align: center;
-    font-size: 50px;
-    color: #fff;
-    margin-top: 30px;
-}
 
 .main-container {
     display: flex;
