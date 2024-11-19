@@ -39,6 +39,7 @@ export default function Home() {
           <InputLabel id="algo-select-label">Choose Algorithm</InputLabel>
           <Select
             labelId="algo-select-label"
+            colour = "white"
             value={selectedAlgo}
             onChange={handleAlgorithmChange}
             label="Choose Algorithm"
