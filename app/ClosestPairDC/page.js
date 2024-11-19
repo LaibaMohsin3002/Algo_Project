@@ -1,6 +1,6 @@
 "use client"
 import { useRef, useState } from 'react';
-import styles from './ClosestPair.css';
+import './ClosestPair.css';
 import * as d3 from 'd3';
 
 const duration = 1500;
@@ -366,7 +366,7 @@ export default function Home() {
   };
 
   return (
-    <div id="container">
+    <div id="_container">
       <h1>CLOSEST PAIR OF POINTS VISUALIZATION</h1>
       <div className="main-container">
         <div className="input-container">

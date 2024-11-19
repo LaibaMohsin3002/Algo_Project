@@ -1,0 +1,103 @@
+.body {
+  font-family: 'Georgia', serif;
+  background-color: #bbb2b2;
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  padding: 0 20px;
+}
+
+.heading {
+  font-size: 40px;
+  color: #fff;
+  margin-bottom: 20px;
+  font-weight: 300;
+  text-transform: uppercase;
+}
+
+.formControl {
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.select {
+  background-color: #1f1f1f;
+  color: #bbb;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.inputLabel {
+  color: #bbb;
+}
+
+.selectIcon {
+  color: #bbb;
+}
+
+.menuItem {
+  background-color: #bbb;
+  color: black;
+}
+
+.menuItem:hover {
+  background-color: #2c3871;
+  color: #bbb;
+}
+
+.menuItemSelected {
+  background-color: #2c3871 !important;
+  color: white !important;
+}
+
+.menuItemSelected:hover {
+  background-color: #23275f !important;
+  color: white !important;
+}
+
+.button {
+  background-color: #8a3fff;
+  color: white;
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px;
+  font-size: 18px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: 300;
+  width: 100%;
+}
+
+.buttonDisabled {
+  background-color: #6a1e9f;
+}
+
+.button:hover {
+  background-color: #091b32;
+}
+
+@media (max-width: 600px) {
+  .heading {
+    font-size: 30px;
+  }
+
+  .button {
+    font-size: 16px;
+    padding: 10px 20px;
+  }
+
+  .formControl {
+    width: 100%;
+  }
+}
