@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import styles from './ClosestPair.css';
 import * as d3 from 'd3';
 
@@ -8,8 +8,9 @@ const duration = 1500;
 export default function Home() {
   const [points, setPoints] = useState([]);
   const svgRef = useRef(null);
-  const cancelRef = useRef(false); 
-  const [fileName, setFileName] = useState(''); 
+  const cancelRef = useRef(false);
+  const[filename, setFileName] = useState(null); 
+  const [minDistance, setMinDistance] = useState(null);
   
   const svgWidth = 800;
   const svgHeight = 600;
@@ -43,6 +44,7 @@ export default function Home() {
 
   const clearButton = () => {
     setPoints([]);
+    setMinDistance(null);
     cancelRef.current = true;
     d3.select(svgRef.current).selectAll("*").remove();
   };
@@ -119,7 +121,11 @@ export default function Home() {
     const pointsX = points.slice().sort((a, b) => a.x - b.x);
     const pointsY = points.slice().sort((a, b) => a.y - b.y);
     try {
-      await closestPairRec(pointsX, pointsY, null, null);
+      const [finalPair, finalLine] = await ClosestPairRecursive(pointsX, pointsY, null, null);
+      if (!cancelRef.current && finalPair) {
+        const finalDistance = distance(finalPair[0], finalPair[1]);
+        setMinDistance(finalDistance.toFixed(2)); // Set minDistance here after all recursive calls
+      }
     } catch (error) {
     }
   };
@@ -197,7 +203,7 @@ export default function Home() {
       .attr('y', midY - 5) // Position slightly above the midpoint
       .attr('class', 'distance-label')
       .attr('text-anchor', 'middle')
-      .attr('stroke', 'blue')
+      .attr('stroke', 'red')
       .text(`Dist: ${dist}`);
 
     return group;
@@ -229,13 +235,13 @@ export default function Home() {
   };
 
   const bruteForce = (points) => {
-    let minDist = Infinity;
+    let minDistance = Infinity;
     let closestPair = [];
     for (let i = 0; i < points.length; ++i) {
       for (let j = i + 1; j < points.length; ++j) {
         let dist = distance(points[i], points[j]);
-        if (dist < minDist) {
-          minDist = dist;
+        if (dist < minDistance) {
+          minDistance = dist;
           closestPair = [points[i], points[j]];
         }
       }
@@ -243,9 +249,9 @@ export default function Home() {
     return closestPair;
   };
 
-  const closestPairRec = async (pointsX, pointsY, leftBoundary, rightBoundary) => {
+  const ClosestPairRecursive = async (pointsX, pointsY, leftLimit, rightLimit) => {
     if (cancelRef.current) return [null, null];
-    const subproblem = highlightSubproblem(leftBoundary, rightBoundary, 'subproblem');
+    const subproblem = highlightSubproblem(leftLimit, rightLimit, 'subproblem');
     await delay(duration);
 
     if (cancelRef.current) {
@@ -268,113 +274,125 @@ export default function Home() {
     const midIdx = Math.floor(pointsX.length / 2);
     const midPoint = pointsX[midIdx];
     const midPointX = pointsX[midIdx].x;
-    const boundary = drawMidpoint(midPointX);
+    const dividingLine = drawMidpoint(midPointX);
     await delay(duration);
     if (cancelRef.current) {
       subproblem.remove();
-      boundary.remove();
+      dividingLine.remove();
       return [null, null];
     }
 
     subproblem.remove();
 
-    const leftSubproblemRightBoundary = midPointX;
-    const leftSubproblemLeftBoundary = leftBoundary !== null ? leftBoundary : pointsX[0].x;
+    const leftSubproblemrightLimit = midPointX;
+    const leftSubproblemleftLimit = leftLimit !== null ? leftLimit : pointsX[0].x;
 
-    const [pairLeft, leftLine] = await closestPairRec(
+    const [leftPair, leftLine] = await ClosestPairRecursive(
       pointsX.slice(0, midIdx),
       pointsY.filter((p) => p.x < midPointX),
-      leftSubproblemLeftBoundary,
-      leftSubproblemRightBoundary
+      leftSubproblemleftLimit,
+      leftSubproblemrightLimit
     );
 
-    const rightSubproblemLeftBoundary = midPointX;
-    const rightSubproblemRightBoundary = rightBoundary !== null ? rightBoundary : pointsX[pointsX.length - 1].x;
+    const rightSubproblemleftLimit = midPointX;
+    const rightSubproblemrightLimit = rightLimit !== null ? rightLimit : pointsX[pointsX.length - 1].x;
 
     if (cancelRef.current) {
       subproblem.remove();
-      boundary.remove();
+      dividingLine.remove();
       return [null, null];
     }
 
-    const [pairRight, rightLine] = await closestPairRec(
+    const [rightPair, rightLine] = await ClosestPairRecursive(
       pointsX.slice(midIdx),
       pointsY.filter((p) => p.x >= midPointX),
-      rightSubproblemLeftBoundary,
-      rightSubproblemRightBoundary
+      rightSubproblemleftLimit,
+      rightSubproblemrightLimit
     );
 
-    const leftBlock = highlightSubproblem(leftSubproblemLeftBoundary, leftSubproblemRightBoundary, 'left-right');
-    const rightBlock = highlightSubproblem(rightSubproblemLeftBoundary, rightSubproblemRightBoundary, 'left-right');
+    const leftBlock = highlightSubproblem(leftSubproblemleftLimit, leftSubproblemrightLimit, 'left-right-combined');
+    const rightBlock = highlightSubproblem(rightSubproblemleftLimit, rightSubproblemrightLimit, 'left-right-combined');
 
     
 
-    let closestPair = pairLeft;
-    let bestLine = leftLine;
-    let notBestLine = rightLine;
-    let minDist = distance(pairLeft[0], pairLeft[1]);
+    let closestPair = leftPair;
+    let bestPairDistance = leftLine;
+    let notbestPairDistance = rightLine;
+    let minDistance = distance(leftPair[0], leftPair[1]);
 
-    if (minDist > distance(pairRight[0], pairRight[1])) {
-      minDist = distance(pairRight[0], pairRight[1]);
-      closestPair = pairRight;
-      bestLine = rightLine;
-      notBestLine = leftLine;
+    if (minDistance > distance(rightPair[0], rightPair[1])) {
+      minDistance = distance(rightPair[0], rightPair[1]);
+      closestPair = rightPair;
+      bestPairDistance = rightLine;
+      notbestPairDistance = leftLine;
     }
-
-    notBestLine.remove();
     await delay(duration);
 
-    const stripLeft = midPoint.x - minDist;
-    const stripRight = midPoint.x + minDist;
+    notbestPairDistance.remove();
+    await delay(duration);
+
+    const stripLeft = midPoint.x - minDistance;
+    const stripRight = midPoint.x + minDistance;
 
     const stripBlock = highlightSubproblem(stripLeft, stripRight, 'strip');
 
     await delay(duration);
 
-    let changed = false;
-    const strip = pointsY.filter((p) => Math.abs(p.x - midPoint.x) < minDist).sort((a, b) => a.y - b.y);;
+    let isPairUpdated = false;
+    const strip = pointsY.filter((p) => Math.abs(p.x - midPoint.x) < minDistance).sort((a, b) => a.y - b.y);;
     for (let i = 0; i < strip.length; ++i) {
-      for (let j = i + 1; j < strip.length && strip[j].y - strip[i].y < minDist; ++j) {
-        if (distance(strip[i], strip[j]) < minDist) {
-          minDist = distance(strip[i], strip[j]);
+      for (let j = i + 1; j < strip.length && strip[j].y - strip[i].y < minDistance; ++j) {
+        if (distance(strip[i], strip[j]) < minDistance) {
+          minDistance = distance(strip[i], strip[j]);
           closestPair = [strip[i], strip[j]];
-          changed = true;
+          isPairUpdated = true;
         }
       }
     }
 
-    if (changed) {
+    if (isPairUpdated) {
       leftLine.remove();
       rightLine.remove();
-      bestLine = findDistance(closestPair);
+      bestPairDistance = findDistance(closestPair);
       await delay(duration);
     }
 
     leftBlock.remove();
     rightBlock.remove();
-    boundary.remove();
+    dividingLine.remove();
     stripBlock.remove();
     await delay(duration);
-    return [closestPair, bestLine];
+    return [closestPair, bestPairDistance];
   };
 
   return (
     <div id="container">
-        <h1>Closest Pair of Points (Divide and Conquer)</h1>
-        <div id="buttons">
-          <div className="file-upload-container">
-          <label htmlFor="file-upload" className="custom-file-upload">
-            Choose File
-          </label>
-          <input id="file-upload" type="file" onChange={handleFileUpload}/>
-          {fileName && <p className="file-name">Selected File: {fileName}</p>}
+      <h1>CLOSEST PAIR OF POINTS VISUALIZATION</h1>
+      <div className="main-container">
+        <div className="input-container">
+          <label htmlFor="fileInput">Upload File with Sample Inputs:</label>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".txt"
+            onChange={handleFileUpload}
+          />
+          <button id="btn" onClick={runButton}>
+            Start Visualization
+          </button>
+          <button id="btn" onClick={clearButton}>
+            Clear Visualization
+          </button>
+          {minDistance !== null && (
+            <div id="result-container">
+              <p>Minimum Distance: {minDistance}</p>
+            </div>
+          )}
           </div>
         
-        <button onClick={clearButton}>Clear</button>
-        <button onClick={runButton}>Start</button>
+          <div id="tooltip" style={{ position: 'absolute', background: 'gray', padding: '5px', opacity: 0 }}></div>
+          <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
       </div>
-      <div id="tooltip" style={{ position: 'absolute', background: 'lightgray', padding: '5px', opacity: 0 }}></div>
-      <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
     </div>
   );
 }
