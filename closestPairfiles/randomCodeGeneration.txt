@@ -1,0 +1,17 @@
+import random
+
+def generate_coordinates_file(filename):
+    # Generate a random number of points greater than 100 till 200 for varying complexity
+    num_points = random.randint(101, 500)
+    
+    with open(filename, 'w') as file:
+        for _ in range(num_points):
+            # Generate random x and y coordinates between -1000 and 1000
+            x = random.randint(-1000, 1000)
+            y = random.randint(-1000, 1000)
+            # Write the coordinate to the file in "x,y" format
+            file.write(f"{x},{y}\n")
+
+# Generate 10 files with random coordinates
+for i in range(10):
+    generate_coordinates_file(f"coordinates_{i+1}.txt")
